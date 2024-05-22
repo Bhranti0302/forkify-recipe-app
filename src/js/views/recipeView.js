@@ -92,7 +92,9 @@ class RecipeView extends View {
       <div class="recipe__ingredients">
         <h2 class="heading--2">Recipe ingredients</h2>
         <ul class="recipe__ingredient-list">
-          ${this._data.ingredients.map(this._generateMarkupIngredient).join('')}
+          ${this._data.ingredients
+            .map(ing => this._generateMarkupIngredient(ing))
+            .join('')}
         </ul>
       </div>
 
@@ -119,7 +121,7 @@ class RecipeView extends View {
     `;
   }
 
-  _generateMarkupIngredient(ing) {
+  _generateMarkupIngredient = ing => {
     return `
       <li class="recipe__ingredient">
         <svg class="recipe__icon">
@@ -134,24 +136,31 @@ class RecipeView extends View {
         </div>
       </li>
     `;
-  }
+  };
 
   _convertToFraction(decimal) {
-    if (decimal === 0) return '0';
-    const gcd = (a, b) => (b ? gcd(b, a % b) : a);
-    const len = decimal.toString().length - 2;
-    const denominator = Math.pow(10, len);
-    const numerator = decimal * denominator;
-    const divisor = gcd(numerator, denominator);
-    const num = numerator / divisor;
-    const den = denominator / divisor;
-    if (den === 1) return `${num}`;
-    if (num > den) {
-      const whole = Math.floor(num / den);
-      const remainder = num % den;
-      return `${whole} ${remainder}/${den}`;
+    const tolerance = 1.0e-6;
+    let h1 = 1;
+    let h2 = 0;
+    let k1 = 0;
+    let k2 = 1;
+    let b = decimal;
+    do {
+      let a = Math.floor(b);
+      let aux = h1;
+      h1 = a * h1 + h2;
+      h2 = aux;
+      aux = k1;
+      k1 = a * k1 + k2;
+      k2 = aux;
+      b = 1 / (b - a);
+    } while (Math.abs(decimal - h1 / k1) > decimal * tolerance);
+
+    if (k1 <= 16) {
+      return `${h1}/${k1}`;
+    } else {
+      return decimal.toFixed(2);
     }
-    return `${num}/${den}`;
   }
 }
 
