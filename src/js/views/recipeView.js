@@ -1,6 +1,5 @@
 import View from './View.js';
 import icons from 'url:../../img/icons.svg'; // Parcel
-import { Fraction } from 'fractional';
 
 class RecipeView extends View {
   _parentElement = document.querySelector('.recipe');
@@ -94,6 +93,7 @@ class RecipeView extends View {
         <h2 class="heading--2">Recipe ingredients</h2>
         <ul class="recipe__ingredient-list">
           ${this._data.ingredients.map(this._generateMarkupIngredient).join('')}
+        </ul>
       </div>
 
       <div class="recipe__directions">
@@ -121,19 +121,37 @@ class RecipeView extends View {
 
   _generateMarkupIngredient(ing) {
     return `
-    <li class="recipe__ingredient">
-      <svg class="recipe__icon">
-        <use href="${icons}#icon-check"></use>
-      </svg>
-      <div class="recipe__quantity">${
-        ing.quantity ? new Fraction(ing.quantity).toString() : ''
-      }</div>
-      <div class="recipe__description">
-        <span class="recipe__unit">${ing.unit}</span>
-        ${ing.description}
-      </div>
-    </li>
-  `;
+      <li class="recipe__ingredient">
+        <svg class="recipe__icon">
+          <use href="${icons}#icon-check"></use>
+        </svg>
+        <div class="recipe__quantity">${
+          ing.quantity ? this._convertToFraction(ing.quantity) : ''
+        }</div>
+        <div class="recipe__description">
+          <span class="recipe__unit">${ing.unit}</span>
+          ${ing.description}
+        </div>
+      </li>
+    `;
+  }
+
+  _convertToFraction(decimal) {
+    if (decimal === 0) return '0';
+    const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+    const len = decimal.toString().length - 2;
+    const denominator = Math.pow(10, len);
+    const numerator = decimal * denominator;
+    const divisor = gcd(numerator, denominator);
+    const num = numerator / divisor;
+    const den = denominator / divisor;
+    if (den === 1) return `${num}`;
+    if (num > den) {
+      const whole = Math.floor(num / den);
+      const remainder = num % den;
+      return `${whole} ${remainder}/${den}`;
+    }
+    return `${num}/${den}`;
   }
 }
 
